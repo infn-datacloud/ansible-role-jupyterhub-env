@@ -21,8 +21,8 @@ contact_email: ""
 cert_manager_type: letsencrypt-prod # [self-signed, letsencrypt-staging, letsencrypt-prod]
 
 # https://github.com/DODAS-TS/jupyterhub-ML_INFN/blob/collaborative/Dockerfile
-jupyter_hub_image: "dodasts/snj-base-jhub:v1.1.1-snj"
-jupyter_images: "dodasts/snj-base-lab:v1.1.1-snj" # Comma separated image list
+jupyter_hub_image: "harbor.cloud.infn.it/datacloud-templates/snj-base-jhub:1.2.0"
+jupyter_images: "harbor.cloud.infn.it/datacloud-templates/snj-base-lab:1.2.0"
 jupyter_use_gpu: no
 jupyter_default_spawner: "LAB"
 jupyter_post_start_cmd: ""
@@ -30,7 +30,7 @@ jupyter_host_mount_dir: ""
 jupyter_mount_dir: ""
 jupyterlab_collaborative: no
 jupyterlab_collaborative_use_gpu: no
-jupyterlab_collaborative_image: "dodasts/snj-base-jlabc:v1.1.1-snj"
+jupyterlab_collaborative_image: "harbor.cloud.infn.it/datacloud-templates/snj-base-labc:1.2.0"
 jupyterhub_all_gpu_uuids: "ALL_GPU_UUIDs=None"
 jupyterhub_mount_config: ""
 
