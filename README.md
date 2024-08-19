@@ -19,9 +19,6 @@ Role Variables
 
 Variable for the monitoring service:
 
-- `install_docker`: bool (default: `yes`)
-- `install_docker_compose`: bool (default: `yes`)
-- `docker_compose_version`: string (default: `"1.29.2"`)
 - `install_nvidia_driver`: bool (default: `yes`)
 - `install_nvidia_driver_from_cuda`: bool (default: `yes`)
 - `install_nvidia_container_toolkit`: bool (default: `yes`)
@@ -74,7 +71,11 @@ The following string variables will be filled with the docker service informatio
 Dependencies
 ------------
 
-There are no other dependencies.
+- [ansible-role-docker](https://github.com/infn-datacloud/ansible-role-docker)
+
+* the following external roles are automatically managed based on the `use_gpu` and `monitoring` boolean flags:
+  * [gpu-support](https://baltig.infn.it/infn-cloud/ansible-role-gpu-support)
+  * [monitoring](https://github.com/infn-datacloud/ansible-role-monitoring)
 
 Example Playbook
 ----------------
@@ -107,10 +108,6 @@ Including an example of how to use your role (for instance, with variables passe
   * Run the Jupyter-hub
 
 ## :link: Useful resources
-
-* External roles:
-  * [gpu-support](https://baltig.infn.it/infn-cloud/ansible-role-gpu-support)
-  * [monitoring](https://github.com/infn-datacloud/ansible-role-monitoring)
 
 * Installation reference:
   * [cuda driver](https://docs.nvidia.com/datacenter/tesla/tesla-installation-notes/index.html)
