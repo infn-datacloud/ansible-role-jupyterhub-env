@@ -2,18 +2,17 @@
 
 A role to setup a node with a jupyterhub that spawns jupyterlab with or without GPU utilization and a monitoring service.
 
-Requirements
-------------
+## Requirements
 
 This role needs a working IAM Client in order to configure the JupyterHub authentication plugin.
 
 Mandatory role variables to provides:
+
 - `iam_url`
 - `iam_client_id`
 - `iam_token`
 
-Role Variables
---------------
+## Role Variables
 
 ### defaults
 
@@ -68,17 +67,15 @@ The following string variables will be filled with the docker service informatio
 - `gpu_partition_flavor`: string, enable the A100 GPU partitioning, four values allowed (default: `"None"`)
 - `use_gpu`: bool, if the GPU can be used or not (default: `no`)
 
-Dependencies
-------------
+## Dependencies
 
 - [ansible-role-docker](https://github.com/infn-datacloud/ansible-role-docker)
 
-* the following external roles are automatically managed based on the `use_gpu` and `monitoring` boolean flags:
-  * [gpu-support](https://baltig.infn.it/infn-cloud/ansible-role-gpu-support)
-  * [monitoring](https://github.com/infn-datacloud/ansible-role-monitoring)
+- the following external roles are automatically managed based on the `use_gpu` and `monitoring` boolean flags:
+  - [gpu-support](https://baltig.infn.it/infn-cloud/ansible-role-gpu-support)
+  - [monitoring](https://github.com/infn-datacloud/ansible-role-monitoring)
 
-Example Playbook
-----------------
+## Example Playbook
 
 Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
 
@@ -98,27 +95,25 @@ Including an example of how to use your role (for instance, with variables passe
 
 ## :paperclip: Current status
 
-* Installation of **nvidia cuda driver**:
-  * Ubuntu *(tested on 20.04)*
-  * RedHat (CentOS)
-* Installation of **nvidia-docker2**:
-  * Ubuntu *(tested on 18.04)*
-* Installation of **docker-compose**
-* Installation of [Jupyter-Hub from dodas-ts](https://github.com/dodas-ts/single-node-jupyterhub)
-  * Run the Jupyter-hub
+- Installation of **nvidia cuda driver**:
+  - Ubuntu *(tested on 20.04)*
+  - RedHat (CentOS)
+- Installation of **nvidia-docker2**:
+  - Ubuntu *(tested on 18.04)*
+- Installation of **docker-compose**
+- Installation of [Jupyter-Hub from dodas-ts](https://github.com/dodas-ts/single-node-jupyterhub)
+  - Run the Jupyter-hub
 
 ## :link: Useful resources
 
-* Installation reference:
-  * [cuda driver](https://docs.nvidia.com/datacenter/tesla/tesla-installation-notes/index.html)
-  * [nvidia docker installation guide](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
+- Installation reference:
+  - [cuda driver](https://docs.nvidia.com/datacenter/tesla/tesla-installation-notes/index.html)
+  - [nvidia docker installation guide](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
 
-License
--------
+## License
 
 Apache 2.0
 
-Author Information
-------------------
+## Author Information
 
 INFN-DATACLOUD

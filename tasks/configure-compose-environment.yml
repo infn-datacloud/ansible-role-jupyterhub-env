@@ -12,28 +12,12 @@
     state: directory
 
 - name: Create configuration file for traefik
-  ansible.builtin.file:
-    path: /opt/traefik/tls.toml
-    state: touch
-    content: |
-      [tls.options]
-
-        [tls.options.default]
-          minVersion = "VersionTLS12"
-          curvePreferences = ["CurveP521", "CurveP384"]
-          sniStrict = true
-
-          cipherSuites = [
-             "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
-             "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
-             "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
-             "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",
-             "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA",
-             "TLS_RSA_WITH_AES_128_GCM_SHA256",
-             "TLS_RSA_WITH_AES_256_GCM_SHA384",
-             "TLS_RSA_WITH_AES_128_CBC_SHA",
-             "TLS_RSA_WITH_AES_256_CBC_SHA"
-          ]
+  ansible.builtin.copy:
+    src: files/tls.toml
+    dest: /opt/traefik/tls.toml
+    owner: root
+    group: root
+    mode: '0644'
 
 - name: create certificates directories
   ansible.builtin.shell:
