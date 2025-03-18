@@ -1,9 +1,4 @@
 ---
-# docker
-install_docker: yes
-install_docker_compose: yes
-docker_compose_version: "1.29.2"
-
 # nvidia
 install_nvidia_driver: yes
 install_nvidia_driver_from_cuda: yes
@@ -51,6 +46,6 @@ grafana_admin_user: ""
 grafana_admin_password: ""
 grafana_client_id: "CLIENT_ID"
 grafana_client_secret: "CLIENT_SECRET"
-grafana_image: "grafana/grafana:9.5.7"
+grafana_image: "grafana/grafana:10.4.16"
 # cvmfs
 cvmfs_repos: ""
