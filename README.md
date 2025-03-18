@@ -46,7 +46,7 @@ Variable for the monitoring service:
 - `grafana_port`:  int, the grafana service port
 - `grafana_admin_user`:  string
 - `grafana_admin_password`:  string
-- `grafana_image`: string (default: `"grafana/grafana:9.5.7"`)
+- `grafana_image`: string (default: `"grafana/grafana:10.4.16"`)
 - `cvmfs_repos`: string, list of the cvmfs repo to mount (default: `""`)
 
 ### vars
