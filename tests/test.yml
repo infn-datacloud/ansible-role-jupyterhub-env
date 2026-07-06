@@ -1,5 +1,10 @@
 ---
-- hosts: localhost
-  become: yes
+- name: Test ansible-role-jupyterhub-env
+  hosts: localhost
+  become: true
+  vars:
+    jupyterhub_dns_name: "test.cloud.infn.it"
+    jupyterhub_cert_manager_type: self-signed
+    jupyterhub_run: false
   roles:
-    - ansible-role-jupyterhub-env
+    - role: ansible-role-jupyterhub-env

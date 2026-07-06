@@ -1,0 +1,10 @@
+---
+tls:
+  certificates:
+    - certFile: /certs/hostcert.pem
+      keyFile: /certs/hostcert.key
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /certs/hostcert.pem
+        keyFile: /certs/hostcert.key

@@ -1,0 +1,12 @@
+---
+# Collections required by the role.
+# Install with: ansible-galaxy collection install -r requirements.yml
+collections:
+  - name: community.docker
+    version: ">=3.10.0"
+  - name: community.crypto
+    version: ">=2.20.0"
+  - name: community.general
+    version: ">=9.0.0"
+  - name: ansible.posix
+    version: ">=1.5.0"

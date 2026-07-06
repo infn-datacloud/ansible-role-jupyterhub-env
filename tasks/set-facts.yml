@@ -1,0 +1,77 @@
+---
+
+# The floating IP is not visible on the VM interfaces: discover it via ipify
+# unless the user provided jupyterhub_public_ip explicitly.
+- name: "Discover PUBLIC_IP via api.ipify.org"
+  when: jupyterhub_public_ip | length == 0
+  block:
+    - name: "Get PUBLIC_IP"
+      ansible.builtin.uri:
+        url: https://api.ipify.org
+        return_content: yes
+      register: public_ip_response
+    - name: "Set PUBLIC_IP fact"
+      ansible.builtin.set_fact:
+        jupyterhub_public_ip: "{{ public_ip_response.content }}"
+- name: "Set DNS_NAME fact (only when not provided by the user)"
+  ansible.builtin.set_fact:
+    jupyterhub_dns_name: "{{ jupyterhub_public_ip }}.{{ jupyterhub_base_dns_name }}"
+  when: jupyterhub_dns_name | length == 0
+- name: "Print PUBLIC_IP and DNS_NAME"
+  ansible.builtin.debug:
+    msg: "PUBLIC_IP={{ jupyterhub_public_ip }}, DNS_NAME={{ jupyterhub_dns_name }}"
+
+- name: Validate public IP and base DNS name are set
+  ansible.builtin.assert:
+    that:
+      - jupyterhub_public_ip | length > 0
+      - jupyterhub_base_dns_name | length > 0
+    fail_msg: >-
+      Could not resolve the public IP or the base DNS name
+      (public_ip='{{ jupyterhub_public_ip | default("") }}',
+      base_dns_name='{{ jupyterhub_base_dns_name | default("") }}').
+
+- name: Validate the public IP is a well-formed IPv4 address
+  ansible.builtin.assert:
+    that:
+      - >-
+        jupyterhub_public_ip is match('^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])$')
+    fail_msg: "jupyterhub_public_ip '{{ jupyterhub_public_ip }}' is not a valid IPv4 address."
+
+- name: Validate the resulting DNS name is a well-formed FQDN
+  ansible.builtin.assert:
+    that:
+      - >-
+        jupyterhub_dns_name is match('^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$')
+    fail_msg: "jupyterhub_dns_name '{{ jupyterhub_dns_name }}' is not a valid FQDN."
+
+- name: Reject a private/loopback IP when using Let's Encrypt
+  ansible.builtin.assert:
+    that:
+      - >-
+        not (jupyterhub_public_ip is match('^(10\.|127\.|169\.254\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.)'))
+    fail_msg: >-
+      jupyterhub_public_ip '{{ jupyterhub_public_ip }}' is private/loopback;
+      Let's Encrypt HTTP-01 cannot validate it. Use self-signed or a public IP.
+  when: jupyterhub_cert_manager_type.startswith('letsencrypt')
+
+- name: Validate the Let's Encrypt contact email
+  ansible.builtin.assert:
+    that:
+      - not (jupyterhub_cert_manager_type.startswith('letsencrypt')) or (jupyterhub_contact_email | length > 0)
+    fail_msg: "With Let's Encrypt certificates jupyterhub_contact_email is required."
+
+# The compose file mounts secrets/iam_client_secret unconditionally: without a
+# way to obtain it, 'docker compose up' would fail with an obscure error.
+- name: Validate the IAM client configuration (deploy only)
+  ansible.builtin.assert:
+    that:
+      - jupyterhub_iam_client_id | length > 0
+      - (jupyterhub_iam_token | length > 0) or (jupyterhub_iam_client_secret | length > 0)
+    fail_msg: >-
+      An IAM client is required to run the stack: set jupyterhub_iam_client_id
+      plus either jupyterhub_iam_token (the role registers the redirect_uris and
+      fetches the client_secret) or jupyterhub_iam_client_secret
+      (pre-registered client, as IAM_CLIENT_SECRET in setup-snj.sh).
+  when: jupyterhub_run | bool
+

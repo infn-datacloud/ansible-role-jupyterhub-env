@@ -1,0 +1,44 @@
+---
+# =============================================================================
+# tasks/certificates.yml — TLS
+#   - self-signed: generate the Jupyter key/cert pair, used by Traefik
+#     (file provider) as the defaultCertificate for ALL routers, Grafana included
+#     (Grafana sits behind Traefik at /grafana, it does not terminate TLS itself).
+#   - letsencrypt: no local certificate, Traefik manages them via ACME.
+# =============================================================================
+
+- name: Generate self-signed TLS material
+  when: _jupyterhub_selfsigned | bool
+  block:
+    - name: Generate self-signed private key
+      community.crypto.openssl_privatekey:
+        path: "{{ jupyterhub_certs_dir }}/jupyter/hostcert.key"
+        type: RSA
+        size: 2048
+
+    - name: Generate certificate signing request
+      community.crypto.openssl_csr:
+        path: "{{ jupyterhub_certs_dir }}/jupyter/hostcert.csr"
+        privatekey_path: "{{ jupyterhub_certs_dir }}/jupyter/hostcert.key"
+        common_name: "{{ jupyterhub_dns_name }}"
+        subject_alt_name:
+          - "DNS:{{ jupyterhub_dns_name }}"
+
+    - name: Generate self-signed certificate
+      community.crypto.x509_certificate:
+        path: "{{ jupyterhub_certs_dir }}/jupyter/hostcert.pem"
+        privatekey_path: "{{ jupyterhub_certs_dir }}/jupyter/hostcert.key"
+        csr_path: "{{ jupyterhub_certs_dir }}/jupyter/hostcert.csr"
+        provider: selfsigned
+        selfsigned_not_after: "+365d"
+      notify: restart jupyterhub
+
+    - name: Set Jupyter certificate ownership (uid 65534)
+      ansible.builtin.file:
+        path: "{{ jupyterhub_certs_dir }}/jupyter/{{ item.file }}"
+        owner: "{{ _jupyterhub_nobody_uid }}"
+        group: "{{ _jupyterhub_nobody_uid }}"
+        mode: "{{ item.mode }}"
+      loop:
+        - { file: hostcert.key, mode: "0400" }
+        - { file: hostcert.pem, mode: "0444" }

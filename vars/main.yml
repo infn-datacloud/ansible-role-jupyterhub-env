@@ -1,14 +1,27 @@
 ---
-# vars file for ansible-role-jupyterhub-env
-jupyter_gpu: "WITH_GPU=false"
-cvmfs_service: ""
-compose_base_jhub_image: "{{ jupyter_hub_image }}"
-compose_base_http_proxy_image: "jupyterhub/configurable-http-proxy"
-compose_base_collab_http_proxy_image: "harbor.cloud.infn.it/datacloud-templates/snj-base-jlabc-proxy:1.2.0"
-jupyterlab_collaborative_service: ""
-jupyterlab_collaborative_service_dependency: ""
-jupyterlab_collaborative_image_param: "image: harbor.cloud.infn.it/datacloud-templates/snj-base-labc:1.2.0"
-jupyterlab_collaborative_gpu_param: ""
-jupyter_with_cvmfs: false
-jupyter_collab_service: false
-use_gpu: no
+# =============================================================================
+# vars/main.yml — internal role constants (not meant to be overridden).
+# =============================================================================
+
+# TLS variant derived from jupyterhub_cert_manager_type.
+_jupyterhub_selfsigned: "{{ jupyterhub_cert_manager_type == 'self-signed' }}"
+_jupyterhub_le_staging: "{{ jupyterhub_cert_manager_type == 'letsencrypt-staging' }}"
+
+# Secrets generated on-host (openssl rand -hex 32) and mounted as Docker secrets.
+_jupyterhub_random_secrets:
+  - jupyterhub_crypt_key
+  - jupyterhub_api_token
+  - jupyter_proxy_token
+
+# Service UID/GID for bind-mounts (aligned with the upstream images).
+_jupyterhub_grafana_uid: 472
+_jupyterhub_nobody_uid: 65534
+
+# redirect_uris to register on the IAM client. Hub always on 443; Grafana always
+# under the /grafana sub-path behind Traefik (self-signed too), so a single URL.
+_jupyterhub_iam_redirect_uris: >-
+  {{
+    ['https://' ~ jupyterhub_dns_name ~ '/hub/oauth_callback']
+    + (['https://' ~ jupyterhub_dns_name ~ '/grafana/login/generic_oauth']
+       if jupyterhub_monitoring | bool else [])
+  }}

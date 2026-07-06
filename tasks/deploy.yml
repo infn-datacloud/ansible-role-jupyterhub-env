@@ -1,0 +1,24 @@
+---
+# =============================================================================
+# tasks/deploy.yml — pre-pull single-user images and start the stack.
+# =============================================================================
+
+# Pre-pulling the single-user images avoids the long wait on first spawn.
+# Tags are pinned, so 'not_present' keeps the task idempotent.
+- name: Pre-pull single-user (jlab) images
+  community.docker.docker_image_pull:
+    name: "{{ item }}"
+    pull: not_present
+  loop: "{{ jupyterhub_images.split(',') | map('trim') | select | list }}"
+
+- name: Start the JupyterHub stack
+  community.docker.docker_compose_v2:
+    project_src: "{{ jupyterhub_base_dir }}"
+    state: present
+    pull: missing
+    remove_orphans: true
+  register: _compose_up
+
+- name: Show running services
+  ansible.builtin.debug:
+    var: _compose_up.containers

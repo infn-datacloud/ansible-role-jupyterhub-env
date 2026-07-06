@@ -1,0 +1,54 @@
+---
+# =============================================================================
+# tasks/prepare-tree.yml — working tree (mirrors make_tree() of setup-snj.sh)
+# =============================================================================
+
+- name: Create base directories (root-owned, 0755)
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "{{ jupyterhub_base_dir }}"
+    - "{{ jupyterhub_base_dir }}/traefik"
+    - "{{ jupyterhub_base_dir }}/prometheus/config"
+    - "{{ jupyterhub_base_dir }}/grafana/provisioning/datasources"
+    - "{{ jupyterhub_base_dir }}/grafana/provisioning/dashboards"
+    - "{{ jupyterhub_base_dir }}/grafana/dashboards"
+    - "{{ jupyterhub_base_dir }}/cookies"
+    - "{{ jupyterhub_base_dir }}/db"
+    - "{{ jupyterhub_mounts_dir }}/users"
+    - "{{ jupyterhub_mounts_dir }}/shared"
+    - "{{ jupyterhub_certs_dir }}/jupyter"
+
+- name: Create secrets directory (0700, root)
+  ansible.builtin.file:
+    path: "{{ jupyterhub_secrets_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: Create Grafana data directory (uid 472)
+  ansible.builtin.file:
+    path: "{{ jupyterhub_base_dir }}/grafana/data"
+    state: directory
+    owner: "{{ _jupyterhub_grafana_uid }}"
+    group: "{{ _jupyterhub_grafana_uid }}"
+    mode: "0755"
+
+- name: Create Prometheus data directory (uid 65534)
+  ansible.builtin.file:
+    path: "{{ jupyterhub_base_dir }}/prometheus/data"
+    state: directory
+    owner: "{{ _jupyterhub_nobody_uid }}"
+    group: "{{ _jupyterhub_nobody_uid }}"
+    mode: "0755"
+
+# CVMFS scaffolding (inactive: jupyterhub_with_cvmfs=false by default).
+- name: Create CVMFS mountpoint (placeholder, future use)
+  ansible.builtin.file:
+    path: /cvmfs
+    state: directory
+    mode: "0755"
+  when: jupyterhub_with_cvmfs | bool

@@ -1,0 +1,9 @@
+---
+profile: production
+
+exclude_paths:
+  - .git/
+  - tests/
+
+# The compose Jinja templates use Docker Compose ${VAR} syntax: those are not
+# Ansible variables, so no var-naming rule applies to them.

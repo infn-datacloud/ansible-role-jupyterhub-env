@@ -1,50 +1,72 @@
 ---
-- name: Define the new redirect_uri variable
-  ansible.builtin.set_fact:
-    iam_redirect_uri: "https://{{ dns_name }}:{{ jupyter_port }}/hub/oauth_callback"
+# =============================================================================
+# tasks/iam-client.yml — register the redirect_uris on the IAM client and store
+# the client_secret as a Docker secret (iam_client_secret); configure-compose
+# reads it back from the file for the Grafana .env.
+# =============================================================================
 
-- name: Retrieve registration endpoint from OpenID configuration
+- name: Retrieve IAM OpenID configuration
   ansible.builtin.uri:
-    url: "{{ iam_url }}/.well-known/openid-configuration"
+    url: "{{ jupyterhub_iam_url | regex_replace('/$', '') }}/.well-known/openid-configuration"
     method: GET
-    return_content: yes
-  register: openid_config
+    return_content: true
+  register: _openid_config
 
-- name: Set registration endpoint variable
-  ansible.builtin.set_fact:
-    registration_endpoint: "{{ openid_config.json.registration_endpoint }}"
-
-- name: Retrieve the IAM client info
+- name: Retrieve current IAM client info
   ansible.builtin.uri:
-    url: "{{ registration_endpoint }}/{{ iam_client_id }}"
+    url: "{{ _openid_config.json.registration_endpoint }}/{{ jupyterhub_iam_client_id }}"
     method: GET
     status_code: 200
     headers:
-      Accept: "application/json"
-      Authorization: "Bearer {{ iam_token }}"
+      Accept: application/json
+      Authorization: "Bearer {{ jupyterhub_iam_token }}"
     return_content: true
-  register: iam_client_get_response
+  register: _iam_client_get
+  no_log: true
 
-- name: Modify client JSON
+- name: Build updated client payload with redirect_uris
   ansible.builtin.set_fact:
-    modified_client_info: "{{ iam_client_get_response.json | combine({'redirect_uris': [iam_redirect_uri]}) }}"
+    _iam_client_payload: >-
+      {{ _iam_client_get.json | combine({'redirect_uris': _jupyterhub_iam_redirect_uris}) }}
+  no_log: true
 
-- name: Update client
+- name: Update IAM client (only when the redirect_uris differ)
   ansible.builtin.uri:
-    url: "{{ registration_endpoint }}/{{ iam_client_id }}"
-    validate_certs: "no"
+    url: "{{ _openid_config.json.registration_endpoint }}/{{ jupyterhub_iam_client_id }}"
     method: PUT
     status_code: 200
     headers:
-      Authorization: "Bearer {{ iam_token }}"
+      Authorization: "Bearer {{ jupyterhub_iam_token }}"
       Content-Type: application/json
     body_format: json
-    body: "{{ modified_client_info }}"
+    body: "{{ _iam_client_payload }}"
     return_content: true
-  register: iam_response
+  register: _iam_update
+  no_log: true
+  when: >-
+    (_iam_client_get.json.redirect_uris | default([]) | sort)
+    != (_jupyterhub_iam_redirect_uris | sort)
 
-- name: Save client info
+- name: Select the authoritative client representation
+  ansible.builtin.set_fact:
+    _iam_client_info: "{{ _iam_update.json | default(_iam_client_get.json) }}"
+  no_log: true
+
+- name: Persist IAM client_secret as Docker secret
   ansible.builtin.copy:
-    content: "{{ modified_client_info }}"
-    dest: /usr/local/share/dodasts/jupyterhub/cookies/.client-iam.json
-    mode: "0644"
+    content: "{{ _iam_client_info.client_secret }}"
+    dest: "{{ jupyterhub_secrets_dir }}/iam_client_secret"
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true
+  notify: restart jupyterhub
+
+- name: Save IAM client info locally
+  ansible.builtin.copy:
+    content: "{{ _iam_client_info | to_nice_json }}"
+    dest: "{{ jupyterhub_base_dir }}/cookies/.client-iam.json"
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true

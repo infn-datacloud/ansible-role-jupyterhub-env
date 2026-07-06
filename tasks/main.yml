@@ -1,55 +1,66 @@
 ---
-# ---------- check OS ----------
-- name: Check OS
-  ansible.builtin.fail:
-    msg: "distro {{ ansible_facts['distribution'] }} not supported"
-  when: ansible_facts['distribution'] != 'Ubuntu' and ansible_facts['distribution'] != 'Debian' and ansible_os_family != 'RedHat'
+# =============================================================================
+# tasks/main.yml — role entrypoint
+# =============================================================================
 
-- name: Check if GPU is used
-  ansible.builtin.set_fact:
-    key_value: "yes"
-    use_gpu: yes
-  when: ((jupyter_use_gpu | bool) or (jupyterlab_collaborative_use_gpu | bool))
+- name: Assert supported OS (Debian 13 / trixie)
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['distribution'] == 'Debian'
+      - ansible_facts['distribution_major_version'] is version('13', '>=')
+    fail_msg: >-
+      This role only supports Debian 13 (trixie) or newer; detected
+      {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }}.
+    success_msg: "Supported OS: {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }}."
 
-# ---------- GPU support ----------
-- name: Add GPU support
-  # include_tasks: nvidia-driver-and-toolkit.yml
-  ansible.builtin.include_tasks: gpu-support.yaml
-  vars:
-    enable_gpu: true
-    gpu_support_role: git+https://baltig.infn.it/infn-cloud/ansible-role-gpu-support,v1.2.4
-    nvidia_driver_branch: "535"
-    nvidia_driver_ubuntu_install_from_cuda_repo: true
-    nvidia_driver_skip_reboot: true
-  when: (use_gpu | bool)
+- name: Set Facts
+  ansible.builtin.include_tasks: set-facts.yml
+  tags: [prepare]
 
-# ---------- reload docker service ----------
-- name: Reload docker service
-  ansible.builtin.systemd:
-    name: docker
-    # Force reload
-    state: reloaded
+- name: Install Docker CE (trixie)
+  ansible.builtin.include_tasks: install-docker.yml
+  when: jupyterhub_install_docker | bool
+  tags: [docker]
 
-# ---------- Setup CVMFS ----------
-- name: Setup CVMFS
-  ansible.builtin.include_tasks: cvmfs.yml
-  when: cvmfs_repos|length > 0
+- name: Prepare directory tree
+  ansible.builtin.include_tasks: prepare-tree.yml
+  tags: [prepare]
 
-# ---------- Jupyter hub ----------
-- name: Prepare Jupyter Hub
-  ansible.builtin.include_tasks: prepare-jupyter-hub.yml
+- name: Generate secrets
+  ansible.builtin.include_tasks: secrets.yml
+  tags: [secrets]
 
-# ---------- configure docker compose environment ----------
-- name: Configure docker compose environment
-  ansible.builtin.include_tasks: configure-compose-environment.yml
+- name: Configure TLS certificates
+  ansible.builtin.include_tasks: certificates.yml
+  tags: [certs]
 
-- name: Run Jupyter Hub
-  ansible.builtin.shell:
-    cmd: docker compose up -d
-    chdir: /usr/local/share/dodasts/jupyterhub
-  when: (run_jupyter | bool)
+- name: Register/update IAM client
+  ansible.builtin.include_tasks: iam-client.yml
+  when:
+    - jupyterhub_iam_client_id | length > 0
+    - jupyterhub_iam_token | length > 0
+  tags: [iam]
 
-  # ---------- Setup monitoring ----------
-- name: Setup monitoring
-  ansible.builtin.include_tasks: monitoring.yml
-  when: (monitoring | bool)
+# With a pre-registered client (client_secret path) the registration endpoint
+# is not usable (it requires the registration access token), so the role
+# cannot add the redirect_uris itself: remind the operator to do it manually.
+- name: Remind about manual redirect_uris registration (no registration token)
+  ansible.builtin.debug:
+    msg: >-
+      jupyterhub_iam_token is empty: the role cannot update the IAM client.
+      Make sure these redirect_uris are registered on client
+      {{ jupyterhub_iam_client_id }}:
+      {{ _jupyterhub_iam_redirect_uris | join(' , ') }}
+  when:
+    - jupyterhub_iam_client_id | length > 0
+    - jupyterhub_iam_token | length == 0
+  tags: [iam]
+
+- name: Render configuration and compose
+  ansible.builtin.include_tasks: configure-compose.yml
+  tags: [config]
+
+- name: Deploy the stack
+  ansible.builtin.include_tasks: deploy.yml
+  when: jupyterhub_run | bool
+  tags: [deploy]

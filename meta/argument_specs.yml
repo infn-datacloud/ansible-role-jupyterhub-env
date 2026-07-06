@@ -1,0 +1,156 @@
+---
+# =============================================================================
+# meta/argument_specs.yml — role parameter validation (ansible-core).
+# Run automatically on role entry; documents and validates the types.
+# =============================================================================
+argument_specs:
+  main:
+    short_description: Single-node JupyterHub stack on Debian 13 (Docker Compose).
+    description:
+      - Configures and starts the LAB-only JupyterHub stack described in setup-snj.sh.
+    options:
+      jupyterhub_install_docker:
+        type: bool
+        default: true
+        description: Install Docker CE from the official repo (codename trixie).
+
+      jupyterhub_run:
+        type: bool
+        default: true
+        description: Run "docker compose up -d" after configuration.
+
+      jupyterhub_compose_project:
+        type: str
+        default: "infndatacloud"
+        description: >-
+          Docker Compose project name (top-level "name:" in compose.yaml),
+          pinned so it does not depend on the jupyterhub_base_dir basename.
+
+      jupyterhub_dns_name:
+        type: str
+        default: ""
+        description: >-
+          Public FQDN of the VM. If empty it is derived as
+          <public_ip>.<jupyterhub_base_dns_name>.
+
+      jupyterhub_public_ip:
+        type: str
+        default: ""
+        description: >-
+          Public (floating) IP of the VM. If empty it is discovered via
+          api.ipify.org (floating IPs are not visible on the interfaces).
+
+      jupyterhub_base_dns_name:
+        type: str
+        default: "cloud.ba.infn.it"
+        description: DNS suffix used to derive jupyterhub_dns_name.
+
+      jupyterhub_docker_users:
+        type: list
+        elements: str
+        default: []
+        description: Extra users to add to the 'docker' group.
+
+      jupyterhub_cert_manager_type:
+        type: str
+        default: self-signed
+        choices:
+          - self-signed
+          - letsencrypt-staging
+          - letsencrypt-prod
+        description: TLS certificate issuance strategy managed by Traefik.
+
+      jupyterhub_contact_email:
+        type: str
+        default: ""
+        description: Administrative email for ACME / Let's Encrypt.
+
+      jupyterhub_iam_url:
+        type: str
+        default: "https://iam.cloud.infn.it/"
+        description: IAM issuer for OAuth/OIDC authentication.
+
+      jupyterhub_iam_subject:
+        type: str
+        default: ""
+        description: IAM subject of the service owner.
+
+      jupyterhub_iam_groups:
+        type: str
+        default: ""
+        description: IAM groups allowed to log in (CSV or space-separated).
+
+      jupyterhub_iam_admin_groups:
+        type: str
+        default: ""
+        description: IAM groups with JupyterHub admin privileges.
+
+      jupyterhub_iam_client_id:
+        type: str
+        default: ""
+        description: client_id of the IAM client to update with the redirect_uris.
+
+      jupyterhub_iam_token:
+        type: str
+        default: ""
+        description: Registration access token of the IAM client.
+
+      jupyterhub_iam_client_secret:
+        type: str
+        default: ""
+        description: >-
+          client_secret of a pre-registered IAM client; alternative to
+          jupyterhub_iam_token. If both are set, the value returned by IAM wins.
+
+      jupyterhub_image_tag:
+        type: str
+        default: "2.3.0"
+        description: Tag of the jhub-singlenode / jlab-base images.
+
+      jupyterhub_harbor_prefix:
+        type: str
+        default: harbor.cloud.infn.it/datacloud-jupyter
+        description: Registry prefix for the stack images.
+
+      jupyterhub_hub_image:
+        type: str
+        description: Docker image of the Hub (jhub-singlenode).
+
+      jupyterhub_images:
+        type: str
+        description: CSV list of single-user images offered in the spawn form.
+
+      jupyterhub_ram_list:
+        type: str
+        default: "1G,2G,4G,8G"
+        description: Selectable RAM sizes (CSV).
+
+      jupyterhub_cpu_list:
+        type: str
+        default: "1,2,4,8"
+        description: Selectable CPU sizes (CSV).
+
+      jupyterhub_use_gpu:
+        type: bool
+        default: false
+        description: Enable GPU usage (device_requests in the spawner).
+
+      jupyterhub_with_cvmfs:
+        type: bool
+        default: false
+        description: Enable the CVMFS mount in user containers (placeholder).
+
+      jupyterhub_monitoring:
+        type: bool
+        default: true
+        description: Enable the inline monitoring stack (Prometheus/Grafana).
+
+      jupyterhub_grafana_admin_user:
+        type: str
+        default: admin
+        description: Grafana local admin user (fallback).
+
+      jupyterhub_grafana_admin_password:
+        type: str
+        default: ""
+        description: Grafana admin password; if empty it is generated and stored.

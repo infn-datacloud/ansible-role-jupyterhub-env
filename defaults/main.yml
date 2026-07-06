@@ -1,51 +1,87 @@
 ---
-# nvidia
-install_nvidia_driver: yes
-install_nvidia_driver_from_cuda: yes
-install_nvidia_container_toolkit: yes
-nvidia_driver_skip_reboot: yes
-gpu_partition_flavor: "None"
+# =============================================================================
+# defaults/main.yml — ansible-role-jupyterhub-env (Debian 13 / ansible-core 2.18)
+#
+# Single-node JupyterHub stack (LAB-only), as in setup-snj.sh:
+#   Traefik (TLS ingress) + configurable-http-proxy (internal HTTP) +
+#   JupyterHub (DockerSpawner) + inline monitoring (Prometheus/cAdvisor/
+#   node-exporter/Grafana). Secrets via Docker Compose secrets.
+# =============================================================================
 
-# jupyter
-run_jupyter: yes
-jupyter_port: "8888"
-jupyter_proxy_token: ""
+# ---------- OS / Docker -------------------------------------------------------
+# Install Docker CE from the official repo (codename trixie) within the role.
+jupyterhub_install_docker: true
+# Extra users to add to the 'docker' group (besides ansible_user).
+jupyterhub_docker_users: []
 
-#traefik
-contact_email: ""
-cert_manager_type: letsencrypt-prod # [self-signed, letsencrypt-staging, letsencrypt-prod]
+# ---------- Filesystem layout (canonical path: infndatacloud) ----------------
+# Compose project name, pinned so it does NOT depend on the basename of
+# jupyterhub_base_dir: renaming the directory must not orphan the containers.
+jupyterhub_compose_project: infndatacloud
+jupyterhub_base_dir: /opt/infndatacloud
+# jupyterhub_base_dir: /usr/local/share/infndatacloud/jupyterhub
+jupyterhub_secrets_dir: "{{ jupyterhub_base_dir }}/secrets"
+jupyterhub_certs_dir: "{{ jupyterhub_base_dir }}/certs"
+jupyterhub_mounts_dir: /jupyter-mounts
 
-# https://github.com/DODAS-TS/jupyterhub-ML_INFN/blob/collaborative/Dockerfile
-jupyter_hub_image: "harbor.cloud.infn.it/datacloud-templates/snj-base-jhub:1.2.0"
-jupyter_images: "harbor.cloud.infn.it/datacloud-templates/snj-base-lab:1.2.0"
-jupyter_use_gpu: no
-jupyter_default_spawner: "LAB"
-jupyter_post_start_cmd: ""
-jupyter_host_mount_dir: ""
-jupyter_mount_dir: ""
-jupyterlab_collaborative: no
-jupyterlab_collaborative_use_gpu: no
-jupyterlab_collaborative_image: "harbor.cloud.infn.it/datacloud-templates/snj-base-labc:1.2.0"
-jupyterhub_all_gpu_uuids: "ALL_GPU_UUIDs=None"
-jupyterhub_mount_config: ""
+# ---------- Execution ---------------------------------------------------------
+jupyterhub_run: true
 
-# IAM
-iam_url: "" # https://iam.example.url.it
-iam_groups: "beta_testers" # group1 group2
-iam_admin_groups: "" # group1 group2
-server_ip: "" # 192.168.1.42
-dns_name: ""
-iam_subject: ""
-iam_client_id: ""
-iam_token: ""
+# ---------- Images ------------------------------------------------------------
+jupyterhub_image_tag: 2.3.0
+jupyterhub_harbor_prefix: harbor.cloud.infn.it/datacloud-jupyter
+# Hub image 
+jupyterhub_hub_image: "{{ jupyterhub_harbor_prefix }}/jhub-singlenode:{{ jupyterhub_image_tag }}"
+# List of single-user images offered in the spawn form (CSV).
+jupyterhub_images: "{{ jupyterhub_harbor_prefix }}/jlab-base:{{ jupyterhub_image_tag }}"
+jupyterhub_http_proxy_image: jupyterhub/configurable-http-proxy:5.1.0
+jupyterhub_traefik_image: traefik:v3.7.5
 
-# monitoring
-monitoring: yes
-grafana_port: 3000
-grafana_admin_user: ""
-grafana_admin_password: ""
-grafana_client_id: "CLIENT_ID"
-grafana_client_secret: "CLIENT_SECRET"
-grafana_image: "grafana/grafana:10.4.16"
-# cvmfs
-cvmfs_repos: ""
+# ---------- Spawn -------------------------------------------------------------
+jupyterhub_default_spawner: LAB
+jupyterhub_ram_list: "1G,2G,4G,8G"
+jupyterhub_cpu_list: "1,2,4,8"
+jupyterhub_docker_network_name: jupyterhub
+jupyterhub_post_start_cmd: ""
+
+# ---------- GPU / CVMFS (placeholder: disabled, reserved for the future) ------
+jupyterhub_use_gpu: false
+jupyterhub_with_cvmfs: false
+jupyterhub_cvmfs_repos: ""
+
+# ---------- IAM / OAuth -------------------------------------------------------
+jupyterhub_iam_url: "https://iam.cloud.infn.it/"
+jupyterhub_iam_subject: ""
+jupyterhub_iam_groups: ""
+jupyterhub_iam_admin_groups: ""
+# client_id + registration access token (to register the redirect_uris).
+jupyterhub_iam_client_id: ""
+jupyterhub_iam_token: ""
+# Alternative to the registration token: client_secret of a pre-registered
+# client (as IAM_CLIENT_SECRET in setup-snj.sh). If both are set, the value
+# returned by IAM via the registration token wins.
+jupyterhub_iam_client_secret: ""
+
+# ---------- Network / TLS -----------------------------------------------------
+jupyterhub_dns_name: ""
+jupyterhub_contact_email: ""
+# self-signed | letsencrypt-staging | letsencrypt-prod
+jupyterhub_cert_manager_type: self-signed
+
+# ---------- Public_IP / DNS_NAME  --------------------------
+# Floating IPs are not visible on the VM interfaces, so if empty the public IP
+# is discovered via api.ipify.org (set-facts.yml); DNS_NAME defaults to
+# <public_ip>.<base_dns_name> when jupyterhub_dns_name is empty.
+jupyterhub_public_ip: ""
+jupyterhub_base_dns_name: "cloud.ba.infn.it"
+
+# ---------- Monitoring (inline in the same compose) --------------------------
+jupyterhub_monitoring: true
+jupyterhub_grafana_admin_user: admin
+# If empty, a random password is generated and stored in <secrets>/grafana_admin_password.
+jupyterhub_grafana_admin_password: ""
+jupyterhub_grafana_image: grafana/grafana:13.0.1
+jupyterhub_prometheus_image: prom/prometheus:v3.11.2
+jupyterhub_node_exporter_image: prom/node-exporter:v1.11.1
+jupyterhub_cadvisor_image: gcr.io/cadvisor/cadvisor:v0.55.1
+jupyterhub_prometheus_retention: 15d
