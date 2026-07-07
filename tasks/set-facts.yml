@@ -13,10 +13,11 @@
     - name: "Set PUBLIC_IP fact"
       ansible.builtin.set_fact:
         jupyterhub_public_ip: "{{ public_ip_response.content }}"
+
 - name: "Set DNS_NAME fact (only when not provided by the user)"
   ansible.builtin.set_fact:
     jupyterhub_dns_name: "{{ jupyterhub_public_ip }}.{{ jupyterhub_base_dns_name }}"
-  when: jupyterhub_dns_name | length == 0
+
 - name: "Print PUBLIC_IP and DNS_NAME"
   ansible.builtin.debug:
     msg: "PUBLIC_IP={{ jupyterhub_public_ip }}, DNS_NAME={{ jupyterhub_dns_name }}"

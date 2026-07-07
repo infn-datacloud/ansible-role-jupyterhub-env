@@ -15,6 +15,7 @@
 
 - name: Set Facts
   ansible.builtin.include_tasks: set-facts.yml
+  when: jupyterhub_dns_name | length == 0
   tags: [prepare]
 
 - name: Install Docker CE (trixie)
