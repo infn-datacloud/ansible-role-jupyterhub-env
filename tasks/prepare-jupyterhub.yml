@@ -1,0 +1,20 @@
+---
+
+- name: Create vm_flavor_ram_giga variable
+  ansible.builtin.set_fact:
+    key_value: "yes"
+    vm_flavor_ram_giga: "{{ ((ansible_facts.memtotal_mb|int) / 1000) | round | int }}"
+
+- name: Create RAM size list
+  ansible.builtin.set_fact:
+    key_value: "yes"
+    list_ram_sizes: "{{ [1] + range(2, (vm_flavor_ram_giga|int) + 1, 2) | list }}"
+
+- name: Display RAM size list
+  ansible.builtin.debug:
+    var: list_ram_sizes
+
+- name: create ram list string
+  ansible.builtin.set_fact:
+    key_value: "yes"
+    list_ram_size: "{{ list_ram_sizes | product(['G']) | map('join', '') | list | join(',') }}"

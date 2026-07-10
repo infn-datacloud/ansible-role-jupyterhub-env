@@ -57,6 +57,10 @@
     - jupyterhub_iam_token | length == 0
   tags: [iam]
 
+- name: Prepare JupyterHub configuration
+  ansible.builtin.include_tasks: prepare-jupyterhub.yml
+  tags: [prepare]
+
 - name: Render configuration and compose
   ansible.builtin.include_tasks: configure-compose.yml
   tags: [config]

@@ -60,11 +60,11 @@ Full list and validation in `defaults/main.yml` and `meta/argument_specs.yml`.
   roles:
     - role: ansible-role-jupyterhub-env
       vars:
-        jupyterhub_dns_name: "90.147.x.y.cloud.ba.infn.it"
-        jupyterhub_cert_manager_type: letsencrypt-prod
+        jupyterhub_dns_name: "xxx.xxx.xxx.xxx.cloud.infn.it"
+        jupyterhub_cert_manager_type: self-signed
         jupyterhub_contact_email: "admin@infn.it"
         jupyterhub_iam_client_id: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-        jupyterhub_iam_token: "eyJ..."
+        jupyterhub_iam_token: "xxx..."
         jupyterhub_iam_subject: "xxxxxxxx-xxxx-..."
         jupyterhub_iam_groups: "users/ai-infn"
         jupyterhub_iam_admin_groups: "admins/ai-infn"

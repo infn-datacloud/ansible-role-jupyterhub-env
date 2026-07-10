@@ -73,7 +73,7 @@ jupyterhub_cert_manager_type: self-signed
 # is discovered via api.ipify.org (set-facts.yml); DNS_NAME defaults to
 # <public_ip>.<base_dns_name> when jupyterhub_dns_name is empty.
 jupyterhub_public_ip: ""
-jupyterhub_base_dns_name: "cloud.ba.infn.it"
+jupyterhub_base_dns_name: "myip.cloud.infn.it"
 
 # ---------- Monitoring (inline in the same compose) --------------------------
 jupyterhub_monitoring: true
