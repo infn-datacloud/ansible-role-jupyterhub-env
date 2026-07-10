@@ -39,7 +39,6 @@ ansible-galaxy collection install -r requirements.yml
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `jupyterhub_dns_name` | `""` | Public FQDN; if empty, derived as `<public_ip>.<base_dns_name>` |
-| `jupyterhub_public_ip` | `""` | Floating IP; if empty, discovered via api.ipify.org |
 | `jupyterhub_cert_manager_type` | `self-signed` | `self-signed` / `letsencrypt-staging` / `letsencrypt-prod` |
 | `jupyterhub_contact_email` | `""` | ACME email (required for Let's Encrypt) |
 | `jupyterhub_iam_url` | `https://iam.cloud.infn.it/` | IAM issuer |
